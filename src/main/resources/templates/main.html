@@ -12,9 +12,26 @@
     <link rel="stylesheet" type="text/css" href="/css/main.css"/>
 </head>
 <body class="text-center">
-<h1>Simple WebRTC Signalling Server</h1>
 
-<video autoplay playsinline></video>
+<!-- Begin page content -->
+<main role="main" class="container">
+    <h1>Simple WebRTC Signalling Server</h1>
+    <!--<div class="row mb-3">-->
+    <div class="d-flex justify-content-around mb-3">
+        <!--<div class="col"></div>-->
+        <div id="buttons" class="">
+            <button type="button" class="btn btn-primary" id="qvga">QVGA</button>
+            <button type="button" class="btn btn-primary" id="vga">VGA</button>
+            <button type="button" class="btn btn-primary" id="hd">HD</button>
+            <!--float-left -->
+            <!--float-right-->
+        </div>
+        <!--<div class="col"></div>-->
+    </div>
+    <div id="videoblock" class="col-lg-12 mb-3">
+        <video autoplay playsinline></video>
+    </div>
+</main>
 
 <script src="js/main.js"></script>
 </body>

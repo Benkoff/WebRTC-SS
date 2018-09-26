@@ -1,9 +1,37 @@
-'use strict';
-//taken from https://codelabs.developers.google.com/codelabs/webrtc-web/#3
+//based on client from https://codelabs.developers.google.com/codelabs/webrtc-web/#3
 
-// On this codelab, you will be streaming only video (video: true).
-const mediaStreamConstraints = {
-    video: true,
+'use strict';
+
+const vgaButton = document.querySelector('#vga');
+const qvgaButton = document.querySelector('#qvga');
+const hdButton = document.querySelector('#hd');
+
+const qvgaConstraints = {
+    video: {width: {exact: 320}, height: {exact: 240}},
+    audio: true
+};
+
+const vgaConstraints = {
+    video: {width: {exact: 640}, height: {exact: 480}},
+    audio: true
+};
+
+const hdConstraints = {
+    video: {width: {exact: 1280}, height: {exact: 720}},
+    audio: true
+};
+
+// Get Media with selected constraints
+qvgaButton.onclick = () => {
+    getMedia(qvgaConstraints);
+};
+
+vgaButton.onclick = () => {
+    getMedia(vgaConstraints);
+};
+
+hdButton.onclick = () => {
+    getMedia(hdConstraints);
 };
 
 // Video element where stream will be placed.
@@ -13,7 +41,7 @@ const localVideo = document.querySelector('video');
 let localStream;
 
 // Handles success by adding the MediaStream to the video element.
-function gotLocalMediaStream(mediaStream) {
+function getLocalMediaStream(mediaStream) {
     localStream = mediaStream;
     localVideo.srcObject = mediaStream;
 }
@@ -24,5 +52,12 @@ function handleLocalMediaStreamError(error) {
 }
 
 // Initializes media stream.
-navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
-    .then(gotLocalMediaStream).catch(handleLocalMediaStreamError);
+function getMedia(constraints) {
+    if (localStream) {
+        localStream.getTracks().forEach(track => {
+            track.stop();
+        });
+    }
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(getLocalMediaStream).catch(handleLocalMediaStreamError);
+}
