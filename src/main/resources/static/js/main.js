@@ -1,63 +1,48 @@
-//based on client from https://codelabs.developers.google.com/codelabs/webrtc-web/#3
+//based on https://github.com/webrtc/samples/blob/gh-pages/src/content/peerconnection/create-offer/js/main.js
 
 'use strict';
 
-const vgaButton = document.querySelector('#vga');
-const qvgaButton = document.querySelector('#qvga');
-const hdButton = document.querySelector('#hd');
+const audioInput = document.querySelector('input#audio');
+const restartInput = document.querySelector('input#restart');
+const vadInput = document.querySelector('input#vad');
+const videoInput = document.querySelector('input#video');
 
-const qvgaConstraints = {
-    video: {width: {exact: 320}, height: {exact: 240}},
-    audio: true
-};
+const numAudioTracksInput = document.querySelector('div#numAudioTracks input');
+const numAudioTracksDisplay = document.querySelector('span#numAudioTracksDisplay');
+const outputTextarea = document.querySelector('textarea#output');
+const createOfferButton = document.querySelector('button#createOffer');
 
-const vgaConstraints = {
-    video: {width: {exact: 640}, height: {exact: 480}},
-    audio: true
-};
+createOfferButton.addEventListener('click', createOffer);
+numAudioTracksInput.addEventListener('change', e => numAudioTracksDisplay.innerText = e.target.value);
 
-const hdConstraints = {
-    video: {width: {exact: 1280}, height: {exact: 720}},
-    audio: true
-};
+async function createOffer() {
+    outputTextarea.value = '';
+    const peerConnection = new RTCPeerConnection(null);
+    const numRequestedAudioTracks = parseInt(numAudioTracksInput.value);
 
-// Get Media with selected constraints
-qvgaButton.onclick = () => {
-    getMedia(qvgaConstraints);
-};
-
-vgaButton.onclick = () => {
-    getMedia(vgaConstraints);
-};
-
-hdButton.onclick = () => {
-    getMedia(hdConstraints);
-};
-
-// Video element where stream will be placed.
-const localVideo = document.querySelector('video');
-
-// Local stream that will be reproduced on the video.
-let localStream;
-
-// Handles success by adding the MediaStream to the video element.
-function getLocalMediaStream(mediaStream) {
-    localStream = mediaStream;
-    localVideo.srcObject = mediaStream;
-}
-
-// Handles error by logging a message to the console with the error message.
-function handleLocalMediaStreamError(error) {
-    console.log('navigator.getUserMedia error: ', error);
-}
-
-// Initializes media stream.
-function getMedia(constraints) {
-    if (localStream) {
-        localStream.getTracks().forEach(track => {
-            track.stop();
-        });
+    const acx = new AudioContext();
+    const dst = acx.createMediaStreamDestination();
+    // Fill up the peer connection with numRequestedAudioTracks number of tracks.
+    for (let i = 0; i < numRequestedAudioTracks; i++) {
+        const track = dst.stream.getTracks()[0];
+        peerConnection.addTrack(track, dst.stream);
     }
-    navigator.mediaDevices.getUserMedia(constraints)
-        .then(getLocalMediaStream).catch(handleLocalMediaStreamError);
+
+    const offerOptions = {
+        // New spec states offerToReceiveAudio/Video are of type long (due to
+        // having to tell how many "m" lines to generate).
+        // http://w3c.github.io/webrtc-pc/#idl-def-RTCOfferAnswerOptions.
+        offerToReceiveAudio: (audioInput.checked) ? 1 : 0,
+        offerToReceiveVideo: (videoInput.checked) ? 1 : 0,
+        iceRestart: restartInput.checked,
+        voiceActivityDetection: vadInput.checked
+    };
+
+    try {
+        const offer = await peerConnection.createOffer(offerOptions);
+        // peerConnection.setLocalDescription(offer);
+        outputTextarea.value = offer.sdp;
+    } catch (e) {
+        outputTextarea.value = `Failed to create offer: ${e}`;
+    }
 }
