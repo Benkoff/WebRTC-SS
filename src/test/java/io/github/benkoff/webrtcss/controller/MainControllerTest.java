@@ -28,4 +28,13 @@ public class MainControllerTest {
                 .andExpect(content().contentType("text/html;charset=UTF-8"))
                 .andExpect(content().string(Matchers.containsString("Main Page")));
     }
+
+    @Test
+    public void shouldReturnStreamViewStatusOk_whenStreamRequested() throws Exception {
+        mockMvc.perform(get("/stream"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("streaming"))
+                .andExpect(content().contentType("text/html;charset=UTF-8"))
+                .andExpect(content().string(Matchers.containsString("Sample Streaming")));
+    }
 }
