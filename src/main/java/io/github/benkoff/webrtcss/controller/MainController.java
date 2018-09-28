@@ -10,4 +10,9 @@ public class MainController {
     public ModelAndView displayMainPage() {
         return new ModelAndView("main");
     }
+
+    @GetMapping("/stream")
+    public ModelAndView displaySampleStreaming() {
+        return new ModelAndView("streaming");
+    }
 }
