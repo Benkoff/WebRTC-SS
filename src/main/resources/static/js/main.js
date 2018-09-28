@@ -7,26 +7,16 @@ const restartInput = document.querySelector('input#restart');
 const vadInput = document.querySelector('input#vad');
 const videoInput = document.querySelector('input#video');
 
-const numAudioTracksInput = document.querySelector('div#numAudioTracks input');
-const numAudioTracksDisplay = document.querySelector('span#numAudioTracksDisplay');
 const outputTextarea = document.querySelector('textarea#output');
 const createOfferButton = document.querySelector('button#createOffer');
 
 createOfferButton.addEventListener('click', createOffer);
-numAudioTracksInput.addEventListener('change', e => numAudioTracksDisplay.innerText = e.target.value);
 
 async function createOffer() {
     outputTextarea.value = '';
     const peerConnection = new RTCPeerConnection(null);
-    const numRequestedAudioTracks = parseInt(numAudioTracksInput.value);
-
     const acx = new AudioContext();
     const dst = acx.createMediaStreamDestination();
-    // Fill up the peer connection with numRequestedAudioTracks number of tracks.
-    for (let i = 0; i < numRequestedAudioTracks; i++) {
-        const track = dst.stream.getTracks()[0];
-        peerConnection.addTrack(track, dst.stream);
-    }
 
     const offerOptions = {
         // New spec states offerToReceiveAudio/Video are of type long (due to
@@ -34,8 +24,8 @@ async function createOffer() {
         // http://w3c.github.io/webrtc-pc/#idl-def-RTCOfferAnswerOptions.
         offerToReceiveAudio: (audioInput.checked) ? 1 : 0,
         offerToReceiveVideo: (videoInput.checked) ? 1 : 0,
-        iceRestart: restartInput.checked,
-        voiceActivityDetection: vadInput.checked
+        voiceActivityDetection: vadInput.checked,
+        iceRestart: restartInput.checked
     };
 
     try {
