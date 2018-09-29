@@ -30,6 +30,7 @@
 * https://github.com/mslosarz/nextrtc-signaling-server
 * https://github.com/Kurento/kurento-tutorial-java/blob/master/kurento-one2one-call-advanced/src/main/java/org/kurento/tutorial/one2onecalladv
 
-**Spring WebSocket handler:**
-* https://gist.github.com/jrgleason/56ae5ca2b8134d5274d1 
+**WebSockets:**
+* https://docs.spring.io/spring/docs/current/spring-framework-reference/web.html#websocket
 * https://www.baeldung.com/java-websockets
+* https://www.baeldung.com/websockets-spring
