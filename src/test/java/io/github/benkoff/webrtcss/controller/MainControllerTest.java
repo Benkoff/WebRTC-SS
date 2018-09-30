@@ -1,11 +1,13 @@
 package io.github.benkoff.webrtcss.controller;
 
+import io.github.benkoff.webrtcss.domain.Room;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Repeat;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
@@ -34,17 +36,36 @@ public class MainControllerTest {
     }
 
     @Test
-    public void should_whenProcessRoomSelection() throws Exception {
+    public void shouldAddRoomWithNumberSelected_whenProcessRoomSelection() throws Exception {
         Long expectedValue = 33L;
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
         map.add("id", expectedValue.toString());
 
+        mockMvc.perform(get("/"))
+                .andExpect(model().attribute("rooms", Matchers.empty()));
         mockMvc.perform(post("/room").params(map))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(view().name("redirect:/"));
-        //TODO with room processing complete
+        mockMvc.perform(get("/"))
+                .andExpect(model().attribute("rooms", Matchers.contains(new Room(expectedValue))));
     }
 
+    @Test
+    public void shouldReturn____________whenDisplaySelectedRoom() throws Exception {
+        Long expectedValue = 33L;
+
+        mockMvc.perform(get("/room/" + expectedValue))
+//                .andExpect(status().isOk())
+//                .andExpect(view().name("main"))
+//                .andExpect(content().contentType("text/html;charset=UTF-8"))
+//                .andExpect(content().string(Matchers.containsString("___")));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(view().name("redirect:/"));
+
+        //ToDO complete with room display model
+    }
+
+    @Repeat(10)
     @Test
     public void shouldReturnMainViewStatusOk_whenRequestRandomRoomNumber() throws Exception {
         mockMvc.perform(get("/room/random"))

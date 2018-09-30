@@ -1,0 +1,9 @@
+##THYMELEAF DEVELOP
+spring:
+  thymeleaf:
+    cache: false
+
+logging:
+  level:
+    org.springframework.web: info
+    io.github.benkoff.webrtcss: debug

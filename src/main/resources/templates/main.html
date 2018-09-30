@@ -18,13 +18,26 @@
     <h1>Simple WebRTC Signaling Server</h1>
     <div id="container">
         <p>
-            This part receives a room number (or generates a new one), and redirects there current user.
+            This part receives a room number (or generates a new one), and redirects current user there.
         </p>
         <form th:method="post" th:action="@{/room}" th:object="${id}" id="form">
             <div class="row justify-content-md-center">
-                <div class="input-group col-md-6 mb-3">
+                <div class="input-group col-md-6 mb-3 justify-content-md-center">
+                    <div class="mb-3" th:if="${not #lists.isEmpty(rooms)}">
+                        <label for="rooms-list">Select one of the rooms created:</label><br>
+                        <h4>
+                        <span id="rooms-list" th:each="r : ${rooms}">
+                            <a th:href="@{/room/{id}(id=${r.id})}">
+                                <button type="button" name="action" id="edit" th:text="${r.id}"
+                                        class="btn badge badge-primary">99
+                                </button>
+                            </a>
+                        </span>
+                        </h4>
+                    </div>
                     <div class="mb-3">
-                        <label for="id">Enter your room number or press Random button to get random one</label>
+                        <label for="id">To create a new room enter your room number, <br>
+                            or press 'Random #' button to get a random one</label>
                         <input class="form-control" name="id" id="id" type="number" placeholder="Min: 0, max: 99"
                                min="0" max="99" th:value="${id}" required>
                     </div>
@@ -32,7 +45,7 @@
                         <a th:href="@{/room/random}">
                             <button class="btn btn-outline-success" type="button">Random #</button>
                         </a>
-                        <button class="btn btn-outline-primary" type="submit">Join Selected Room</button>
+                        <button class="btn btn-outline-primary" type="submit">Create Selected Room</button>
                     </div>
                 </div>
             </div>
