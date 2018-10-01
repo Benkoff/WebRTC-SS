@@ -9,7 +9,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
     <!-- Custom styles for this template -->
-    <link rel="stylesheet" type="text/css" href="../css/main.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/main.css"/>
 </head>
 <body class="text-center">
 
@@ -18,7 +18,7 @@
     <h1>Simple WebRTC Signaling Server</h1>
     <div id="container">
         <p>
-            This part receives a room number (or generates a new one), and redirects current user there.
+            This part receives a room number (or generates new one), and redirects current user there.
         </p>
         <form th:method="post" th:action="@{/room}" th:object="${id}" id="form">
             <input type="hidden" id="uuid" name="uuid" th:value="${uuid}"/>
@@ -38,7 +38,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="id">To create a new room enter your room number, <br>
-                            or press 'Random #' button to get a random one</label>
+                            or press 'Random #' button to get random one</label>
                         <input class="form-control" name="id" id="id" type="number" placeholder="Min: 0, max: 99"
                                min="0" max="99" th:value="${id}" required>
                     </div>
@@ -56,6 +56,6 @@
 </main>
 
 <!--generates unique user identifier stored at 'uuid' input field to pass it to backside-->
-<script src="../js/main.js"></script>
+<script src="/js/main.js"></script>
 </body>
 </html>

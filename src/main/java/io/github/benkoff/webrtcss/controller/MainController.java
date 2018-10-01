@@ -53,7 +53,7 @@ public class MainController {
                 Room room = new Room(number);
                 roomService.getRooms().add(room);
                 room.setHostName(name);
-                logger.debug("Host {} creates Room#{}", name, number);
+                logger.debug("User {} creates Room#{}", name, number);
             });
         });
 
