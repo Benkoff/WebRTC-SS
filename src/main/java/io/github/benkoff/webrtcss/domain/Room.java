@@ -5,8 +5,8 @@ import java.util.Objects;
 
 public class Room {
     @NotNull private Long id;
-    private Long hostId;
-    private Long visitorId;
+    private String hostName;
+    private String visitorName;
 
     public Room(Long id) {
         this.id = id;
@@ -16,24 +16,20 @@ public class Room {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public String getHostName() {
+        return hostName;
     }
 
-    public Long getHostId() {
-        return hostId;
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
     }
 
-    public void setHostId(Long hostId) {
-        this.hostId = hostId;
+    public String getVisitorName() {
+        return visitorName;
     }
 
-    public Long getVisitorId() {
-        return visitorId;
-    }
-
-    public void setVisitorId(Long visitorId) {
-        this.visitorId = visitorId;
+    public void setVisitorName(String visitorName) {
+        this.visitorName = visitorName;
     }
 
     @Override
@@ -42,13 +38,13 @@ public class Room {
         if (o == null || getClass() != o.getClass()) return false;
         Room room = (Room) o;
         return Objects.equals(getId(), room.getId()) &&
-                Objects.equals(getHostId(), room.getHostId()) &&
-                Objects.equals(getVisitorId(), room.getVisitorId());
+                Objects.equals(getHostName(), room.getHostName()) &&
+                Objects.equals(getVisitorName(), room.getVisitorName());
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(getId(), getHostId(), getVisitorId());
+        return Objects.hash(getId(), getHostName(), getVisitorName());
     }
 }
