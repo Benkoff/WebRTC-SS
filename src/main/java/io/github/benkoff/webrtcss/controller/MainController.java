@@ -4,7 +4,6 @@ import io.github.benkoff.webrtcss.domain.Room;
 import io.github.benkoff.webrtcss.domain.RoomService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -14,10 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.Comparator;
 import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Controller
@@ -63,17 +59,17 @@ public class MainController {
     @GetMapping("/room/{sid}/user/{uuid}")
     public ModelAndView displaySelectedRoom(@PathVariable("sid") String sid,
                                             @PathVariable("uuid") String uuid) {
-        // Link to redirect if provided data invalid
+        // link to redirect if provided data invalid
         ModelAndView modelAndView = new ModelAndView("redirect:/");
 
         if (parseId(sid).isPresent()) {
-            // find the room
+            // find a room with provided id
             Room room = roomService.getRooms().stream()
                     .filter(r -> r.getId().equals(parseId(sid).get()))
                     .findFirst()
                     .orElse(null);
             if(room != null) {
-                // add this visitor if not a host
+                // add this user as a visitor
                 if (!room.getHostName().equals(uuid)) {
                     room.setVisitorName(uuid);
                 }
