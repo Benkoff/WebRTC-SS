@@ -22,8 +22,8 @@ public class SignalHandler extends TextWebSocketHandler {
         // webSocket has been opened
         //TODO Save this session to send messages outside
 
-        // very first message
-        session.sendMessage(new TextMessage("Connection to the server has been established!"));
+        // very first message from client
+        session.sendMessage(new TextMessage("Connection to the server has been established"));
     }
 
     @Override

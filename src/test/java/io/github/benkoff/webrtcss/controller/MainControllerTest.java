@@ -1,7 +1,8 @@
 package io.github.benkoff.webrtcss.controller;
 
 import io.github.benkoff.webrtcss.domain.Room;
-import io.github.benkoff.webrtcss.domain.RoomService;
+import io.github.benkoff.webrtcss.service.RoomService;
+import io.github.benkoff.webrtcss.util.Parser;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class MainControllerTest {
     @Autowired private WebApplicationContext webApplicationContext;
     @Autowired private RoomService service;
+    @Autowired private Parser parser;
     private MainController controller;
     private MockMvc mockMvc;
 
@@ -43,7 +45,7 @@ public class MainControllerTest {
 
     @Before
     public void setup() {
-        controller = new MainController(service);
+        controller = new MainController(service, parser);
         mockMvc = MockMvcBuilders
                 .webAppContextSetup(webApplicationContext)
                 .build();
@@ -154,6 +156,11 @@ public class MainControllerTest {
                                 Matchers.hasItem(
                                         Matchers.<Room> hasProperty("id",
                                                 Matchers.equalTo(invalidValue))))));
+    }
+
+    @Test
+    public void shouldReturnMainView_whenProcessRoomExit() throws Exception {
+        //TODO
     }
 
     @Repeat(10)
