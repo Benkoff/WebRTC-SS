@@ -11,7 +11,7 @@ socket.onopen = function() {
 
 // add an event listener, when a message is received
 socket.onmessage = function(message) {
-    console.log('Message received from server: ' + message);
+    console.log('Message received from server: ' + message.data);
 };
 
 function sendToServer(msg) {

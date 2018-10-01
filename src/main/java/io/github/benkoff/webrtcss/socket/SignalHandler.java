@@ -9,6 +9,8 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 public class SignalHandler extends TextWebSocketHandler {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    // Jackson JSON converter
+//    private ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
@@ -21,7 +23,7 @@ public class SignalHandler extends TextWebSocketHandler {
         //TODO Save this session to send messages outside
 
         // very first message
-        session.sendMessage(new TextMessage("You have connected to the server. This is the first message."));
+        session.sendMessage(new TextMessage("Connection to the server has been established!"));
     }
 
     @Override
