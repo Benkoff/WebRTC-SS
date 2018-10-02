@@ -16,9 +16,9 @@ public class SignalHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private WebSocketSession session;
 
-    public static final String TEXT_TYPE = "text";
-    public static final String SIGNAL_TYPE = "signal";
-    public static final String JOIN_TYPE = "join";
+    private static final String TEXT_TYPE = "text";
+    private static final String SIGNAL_TYPE = "signal";
+    private static final String JOIN_TYPE = "join";
 
     @Override
     public void afterConnectionClosed(final WebSocketSession session, final CloseStatus status) throws Exception {
@@ -43,11 +43,11 @@ public class SignalHandler extends TextWebSocketHandler {
 
         try {
             WebSocketMessage message = objectMapper.readValue(textMessage.getPayload(), WebSocketMessage.class);
-            logger.debug("Message of {} type from {} received", message.getType(), message.getFrom());
+            logger.debug("[x] Message of {} type from {} received", message.getType(), message.getFrom());
 
             switch (message.getType()) {
                 case TEXT_TYPE:
-                    logger.debug("Text message: {}", message.getData().toString());
+                    logger.debug("[x] Text message: {}", message.getData().toString());
                     break;
                 case SIGNAL_TYPE:
                     break;

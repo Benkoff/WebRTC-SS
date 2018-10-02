@@ -54,7 +54,7 @@ public class MainController {
                 Room room = new Room(number);
                 if (roomService.addRoom(room)) {
                     room.setHostName(name);
-                    logger.debug("User {} creates Room #{}", name, number);
+                    logger.debug("[x] User {} creates Room #{}", name, number);
                 }
             });
         });
@@ -75,7 +75,7 @@ public class MainController {
                 if (!room.getHostName().equals(uuid)) {
                     room.setVisitorName(uuid);
                 }
-                logger.debug("User {} joins Room #{}", uuid, sid);
+                logger.debug("[x] User {} joins Room #{}", uuid, sid);
                 // send to the room
                 modelAndView = new ModelAndView("chat_room", "id", sid);
                 modelAndView.addObject("uuid", uuid);
@@ -88,7 +88,7 @@ public class MainController {
     @GetMapping("/room/{sid}/user/{uuid}/exit")
     public ModelAndView processRoomExit(@PathVariable("sid") String sid,
                                         @PathVariable("uuid") String uuid) {
-        logger.debug("User {} exits Room #{}", uuid, sid);
+        logger.debug("[x] User {} exits Room #{}", uuid, sid);
         Room room = roomService.findRoomByStringId(sid).orElse(null);
         if(room != null && !room.getHostName().equals(uuid)) {
             room.setVisitorName(uuid);
