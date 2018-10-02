@@ -14,6 +14,7 @@ const audioButtonOn = document.querySelector('#audio_on');
 const exitButton = document.querySelector('#exit');
 const localVideo = document.querySelector('#local_video');
 const remoteVideo = document.querySelector('#remote_video');
+const localUser = localStorage.getItem("uuid");
 let localStream;
 let myPeerConnection;
 
@@ -31,12 +32,24 @@ $(function(){
 socket.onopen = function() {
     console.log('WebSocket connection opened. Ready to send messages');
     // send a message to the server
-    socket.send('Client '+localStorage.getItem("uuid")+' connected');
+    sendToServer({
+        from: localUser,
+        type: 'text',
+        data: 'Client '+ localUser +' connected'
+    });
 };
 
 // add an event listener for a message being received
 socket.onmessage = function(message) {
-    console.log('Message received from server: ' + message.data);
+    const webSocketMessage = JSON.parse(message.data);
+    if (webSocketMessage.type === 'text') {
+        console.log('Text message from ' + webSocketMessage.from + ' received: ' + webSocketMessage.data);
+    } else if (webSocketMessage.type === 'signal') {
+        console.log('Signal received from server');
+
+    } else {
+        console.log('Error: Join type message received from server');
+    }
 };
 
 // a listener for the socket being closed event
@@ -48,6 +61,12 @@ socket.onclose = function(message) {
 socket.onerror = function(message) {
     console.log("Error: " + message);
 };
+
+// use JSON format to send WebSocket message
+function sendToServer(msg) {
+    let msgJSON = JSON.stringify(msg);
+    socket.send(msgJSON);
+}
 
 // mute video
 videoButtonOff.onclick = () => {
@@ -75,14 +94,8 @@ audioButtonOn.onclick = () => {
 
 // close socket when exit
 exitButton.onclick = () => {
-    end();
+    stop();
 };
-
-// use JSON format to send WebSocket message
-function sendToServer(msg) {
-    let msgJSON = JSON.stringify(msg);
-    socket.send(msgJSON);
-}
 
 // create peer connection, init local stream
 function start() {
@@ -90,9 +103,13 @@ function start() {
     getMedia(mediaConstraints);
 }
 
-function end() {
+function stop() {
     // send a message to the server
-    socket.send('Client '+localStorage.getItem("uuid")+' disconnected');
+    sendToServer({
+        from: localUser,
+        type: 'text',
+        data: 'Client ' + localUser +' disconnected'
+    });
     socket.close();
     //TODO close all
 }
@@ -123,7 +140,7 @@ function handleGetUserMediaError(error) {
             break;
     }
 
-    end();
+    stop();
 }
 
 // add MediaStream to local video element and to the Peer
