@@ -1,5 +1,11 @@
 'use strict';
 const socket = new WebSocket('ws://' + window.location.host + '/signal');
+const peerConnectionConfig = {
+    'iceServers': [
+        {'urls': 'stun:stun.stunprotocol.org:3478'},
+        {'urls': 'stun:stun.l.google.com:19302'},
+    ]
+};
 
 const videoButtonOff = document.querySelector('#video_off');
 const videoButtonOn = document.querySelector('#video_on');
@@ -9,15 +15,16 @@ const exitButton = document.querySelector('#exit');
 const localVideo = document.querySelector('#local_video');
 const remoteVideo = document.querySelector('#remote_video');
 let localStream;
+let myPeerConnection;
 
 const mediaConstraints = {
     audio: true,
     video: true
 };
 
-// run local video when page load
+// run when page loads
 $(function(){
-    getMedia(mediaConstraints);
+    start();
 });
 
 // add an event listener to get to know when a connection is open
@@ -68,38 +75,74 @@ audioButtonOn.onclick = () => {
 
 // close socket when exit
 exitButton.onclick = () => {
+    end();
+};
+
+// use JSON format to send WebSocket message
+function sendToServer(msg) {
+    let msgJSON = JSON.stringify(msg);
+    socket.send(msgJSON);
+}
+
+// create peer connection, init local stream
+function start() {
+    createPeerConnection();
+    getMedia(mediaConstraints);
+}
+
+function end() {
     // send a message to the server
     socket.send('Client '+localStorage.getItem("uuid")+' disconnected');
     socket.close();
-};
-
-// initialize media stream.
-function getMedia(constraints) {
-    if (localStream) {
-        localStream.getTracks().forEach(track => {
-            track.stop();
-        });
-    }
-    navigator.mediaDevices.getUserMedia(constraints)
-        .then(getLocalMediaStream).catch(handleLocalMediaStreamError);
+    //TODO close all
 }
 
-// Handles success by adding the MediaStream to the video element.
+// initialize media stream
+function getMedia(constraints) {
+    if (localStream) {
+        localStream.getTracks().forEach(track => {track.stop();});
+    }
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(getLocalMediaStream).catch(handleGetUserMediaError);
+}
+
+// handle get media error
+function handleGetUserMediaError(error) {
+    console.log('navigator.getUserMedia error: ', error);
+    switch(error.name) {
+        case "NotFoundError":
+            alert("Unable to open your call because no camera and/or microphone" +
+                "were found.");
+            break;
+        case "SecurityError":
+        case "PermissionDeniedError":
+            // Do nothing; this is the same as the user canceling the call.
+            break;
+        default:
+            alert("Error opening your camera and/or microphone: " + error.message);
+            break;
+    }
+
+    end();
+}
+
+// add MediaStream to local video element and to the Peer
 function getLocalMediaStream(mediaStream) {
     localStream = mediaStream;
     localVideo.srcObject = mediaStream;
+    localStream.getTracks().forEach(track => myPeerConnection.addTrack(track, localStream));
 }
 
-// Handles error by logging a message to the console with the error message.
-function handleLocalMediaStreamError(error) {
-    console.log('navigator.getUserMedia error: ', error);
-}
+function createPeerConnection() {
+    myPeerConnection = new RTCPeerConnection(peerConnectionConfig);
 
-// use JSON format
-function sendToServer(msg) {
-    let msgJSON = JSON.stringify(msg);
-
-    socket.send(msgJSON);
+    // myPeerConnection.onicecandidate = handleICECandidateEvent;
+    // myPeerConnection.ontrack = handleTrackEvent;
+    // myPeerConnection.onnegotiationneeded = handleNegotiationNeededEvent;
+    // myPeerConnection.onremovetrack = handleRemoveTrackEvent;
+    // myPeerConnection.oniceconnectionstatechange = handleICEConnectionStateChangeEvent;
+    // myPeerConnection.onicegatheringstatechange = handleICEGatheringStateChangeEvent;
+    // myPeerConnection.onsignalingstatechange = handleSignalingStateChangeEvent;
 }
 
 

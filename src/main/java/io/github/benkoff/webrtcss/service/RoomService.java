@@ -17,7 +17,7 @@ public class RoomService {
     private final Set<Room> rooms = new TreeSet<>(Comparator.comparing(Room::getId));
 
     @Autowired
-    public RoomService(Parser parser) {
+    public RoomService(final Parser parser) {
         this.parser = parser;
     }
 
@@ -28,11 +28,11 @@ public class RoomService {
         return defensiveCopy;
     }
 
-    public Boolean addRoom(Room room) {
+    public Boolean addRoom(final Room room) {
         return rooms.add(room);
     }
 
-    public Optional<Room> findRoomByStringId(String sid) {
+    public Optional<Room> findRoomByStringId(final String sid) {
         return rooms.stream().filter(r -> r.getId().equals(parser.parseId(sid).get())).findFirst();
     }
 }
