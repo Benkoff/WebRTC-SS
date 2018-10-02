@@ -1,7 +1,7 @@
 package io.github.benkoff.webrtcss.controller;
 
 import io.github.benkoff.webrtcss.domain.Room;
-import io.github.benkoff.webrtcss.service.RoomService;
+import io.github.benkoff.webrtcss.domain.RoomService;
 import io.github.benkoff.webrtcss.util.Parser;
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -38,7 +38,7 @@ public class MainControllerTest {
     private MockMvc mockMvc;
 
     private Long expectedId;
-    private String hostName;
+    private String host;
     private String uuid;
     private Room expectedRoom;
     private MultiValueMap<String, String> map;
@@ -51,13 +51,11 @@ public class MainControllerTest {
                 .build();
 
         expectedId = 33L;
-        hostName = UUID.randomUUID().toString();
+        host = UUID.randomUUID().toString();
         uuid = UUID.randomUUID().toString();
         map = new LinkedMultiValueMap<>();
         expectedRoom = new Room(expectedId);
-        expectedRoom.setHostName(hostName);
         map.add("id", expectedId.toString());
-        map.add("uuid", hostName);
         map.add("action", "create");
     }
 
@@ -74,21 +72,14 @@ public class MainControllerTest {
     public void shouldAddRoomWithNumberSelected_whenProcessRoomSelection() throws Exception {
         mockMvc.perform(get("/"))
                 .andExpect(model().attribute("rooms", Matchers.empty()));
-        mockMvc.perform(post("/room").params(map))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(view().name("redirect:/"));
+        mockMvc.perform(post("/room").params(map));
         mockMvc.perform(get("/"))
                 .andExpect(model().attribute("rooms", Matchers.contains(expectedRoom)));
     }
 
     @Test
     public void shouldReturnChatRoomOk_whenDisplaySelectedRoom_paramsOk() throws Exception {
-        expectedRoom.setVisitorName(uuid);
         mockMvc.perform(post("/room").params(map));
-        hostName = service.getRooms().stream()
-                .filter(room -> room.getId().equals(expectedId)).findFirst()
-                .map(Room::getHostName).orElse("");
-
         mockMvc.perform(get("/room/" + expectedId + "/user/" + uuid))
                 .andExpect(status().isOk())
                 .andExpect(view().name("chat_room"))
@@ -98,25 +89,13 @@ public class MainControllerTest {
                 .andExpect(model().attribute("rooms",
                         Matchers.hasItem(
                                 Matchers.<Room> hasProperty("id",
-                                        Matchers.equalTo(expectedId)))))
-                .andExpect(model().attribute("rooms",
-                        Matchers.hasItem(
-                                Matchers.<Room> hasProperty("hostName",
-                                        Matchers.equalTo(hostName)))))
-                .andExpect(model().attribute("rooms",
-                        Matchers.hasItem(
-                                Matchers.<Room> hasProperty("visitorName",
-                                        Matchers.equalTo(uuid)))));
+                                        Matchers.equalTo(expectedId)))));
     }
 
     @Test
     public void shouldReturnChatRoomOk_whenDisplaySelectedRoom_withHost() throws Exception {
         mockMvc.perform(post("/room").params(map));
-        hostName = service.getRooms().stream()
-                .filter(room -> room.getId().equals(expectedId)).findFirst()
-                .map(Room::getHostName).orElse("");
-
-        mockMvc.perform(get("/room/" + expectedId + "/user/" + hostName))
+        mockMvc.perform(get("/room/" + expectedId + "/user/" + host))
                 .andExpect(status().isOk())
                 .andExpect(view().name("chat_room"))
                 .andExpect(content().contentType("text/html;charset=UTF-8"))
@@ -125,25 +104,16 @@ public class MainControllerTest {
                 .andExpect(model().attribute("rooms",
                         Matchers.hasItem(
                                 Matchers.<Room> hasProperty("id",
-                                        Matchers.equalTo(expectedId)))))
-                .andExpect(model().attribute("rooms",
-                        Matchers.hasItem(
-                                Matchers.<Room> hasProperty("hostName",
-                                        Matchers.equalTo(hostName)))))
-                .andExpect(model().attribute("rooms",
-                        Matchers.hasItem(
-                                Matchers.<Room> hasProperty("visitorName",
-                                        Matchers.isEmptyOrNullString()))));
+                                        Matchers.equalTo(expectedId)))));
     }
 
     @Test
     public void shouldRedirect_whenDisplaySelectedRoom_withInvalidRoom() throws Exception {
         Long invalidValue = 99L;
-        String thisId = UUID.randomUUID().toString();
-        expectedRoom.setVisitorName(thisId);
+        String visitor = UUID.randomUUID().toString();
 
         mockMvc.perform(post("/room").params(map));
-        mockMvc.perform(get("/room/" + invalidValue + "/user/" + thisId))
+        mockMvc.perform(get("/room/" + invalidValue + "/user/" + visitor))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(view().name("redirect:/"));
         mockMvc.perform(get("/"))

@@ -37,6 +37,7 @@
     <h1>Simple WebRTC Signalling Server</h1>
     <div class="row justify-content-around mb-3">
         <div class="col-lg-6 mb-3">
+            <input type="hidden" id="id" name="id" th:value="${id}"/>
             <div class="mb-3" th:text="'User: ' + ${uuid} + ' @ Room #' + ${id}">
                 Local User Id
             </div>

@@ -1,7 +1,7 @@
 package io.github.benkoff.webrtcss.controller;
 
 import io.github.benkoff.webrtcss.domain.Room;
-import io.github.benkoff.webrtcss.service.RoomService;
+import io.github.benkoff.webrtcss.domain.RoomService;
 import io.github.benkoff.webrtcss.util.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,17 +49,17 @@ public class MainController {
             // simplified version, no errors processing
             return new ModelAndView("redirect:/");
         }
-        parser.parseId(sid).ifPresent(number -> {
+        Long id = parser.parseId(sid).orElse(null);
+        if (id != null) {
             Optional.ofNullable(uuid).ifPresent(name -> {
-                Room room = new Room(number);
+                Room room = new Room(id);
                 if (roomService.addRoom(room)) {
-                    room.setHostName(name);
-                    logger.debug("[x] User {} creates Room #{}", name, number);
+                    logger.debug("User {} creates Room #{}", name, id);
                 }
             });
-        });
+        }
 
-        return new ModelAndView("redirect:/");
+        return displayMainPage(id, uuid);
     }
 
     @GetMapping("/room/{sid}/user/{uuid}")
@@ -71,11 +71,7 @@ public class MainController {
         if (parser.parseId(sid).isPresent()) {
             Room room = roomService.findRoomByStringId(sid).orElse(null);
             if(room != null) {
-                // add this user as a visitor if not a host
-                if (!room.getHostName().equals(uuid)) {
-                    room.setVisitorName(uuid);
-                }
-                logger.debug("[x] User {} joins Room #{}", uuid, sid);
+                logger.debug("User {} joins Room #{}", uuid, sid);
                 // send to the room
                 modelAndView = new ModelAndView("chat_room", "id", sid);
                 modelAndView.addObject("uuid", uuid);
@@ -88,11 +84,7 @@ public class MainController {
     @GetMapping("/room/{sid}/user/{uuid}/exit")
     public ModelAndView processRoomExit(@PathVariable("sid") String sid,
                                         @PathVariable("uuid") String uuid) {
-        logger.debug("[x] User {} exits Room #{}", uuid, sid);
-        Room room = roomService.findRoomByStringId(sid).orElse(null);
-        if(room != null && !room.getHostName().equals(uuid)) {
-            room.setVisitorName(uuid);
-        }
+        logger.debug("User {} exits Room #{}", uuid, sid);
 
         return displayMainPage(parser.parseId(sid).orElse(null), uuid);
     }
