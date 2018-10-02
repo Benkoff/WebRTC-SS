@@ -14,8 +14,11 @@ const audioButtonOn = document.querySelector('#audio_on');
 const exitButton = document.querySelector('#exit');
 const localVideo = document.querySelector('#local_video');
 const remoteVideo = document.querySelector('#remote_video');
+const localRoom = document.querySelector('input#id').value;
 const localUser = localStorage.getItem("uuid");
+
 let localStream;
+let localVideoTracks;
 let myPeerConnection;
 
 const mediaConstraints = {
@@ -30,12 +33,12 @@ $(function(){
 
 // add an event listener to get to know when a connection is open
 socket.onopen = function() {
-    console.log('WebSocket connection opened. Ready to send messages');
+    console.log('WebSocket connection opened. Room: ' + localRoom);
     // send a message to the server
     sendToServer({
         from: localUser,
-        type: 'text',
-        data: 'Client '+ localUser +' connected'
+        type: 'join',
+        data: localRoom
     });
 };
 
@@ -46,6 +49,12 @@ socket.onmessage = function(message) {
         console.log('Text message from ' + webSocketMessage.from + ' received: ' + webSocketMessage.data);
     } else if (webSocketMessage.type === 'signal') {
         console.log('Signal received from server');
+
+
+        //TODO
+        // myPeerConnection.setRemoteDescription(new RTCSessionDescription(webSocketMessage.data.))
+
+
 
     } else {
         console.log('Error: Join type message received from server');
@@ -70,25 +79,24 @@ function sendToServer(msg) {
 
 // mute video
 videoButtonOff.onclick = () => {
-    mediaConstraints.video = false;
-    getMedia(mediaConstraints);
+    localVideoTracks = localStream.getVideoTracks();
+    localVideoTracks.forEach(track => localStream.removeTrack(track));
+    $(localVideo).css('display', 'none');
     console.log('Video Off');
 };
 videoButtonOn.onclick = () => {
-    mediaConstraints.video = true;
-    getMedia(mediaConstraints);
+    localVideoTracks.forEach(track => localStream.addTrack(track));
+    $(localVideo).css('display', 'inline');
     console.log('Video On');
 };
 
 // mute audio
 audioButtonOff.onclick = () => {
-    mediaConstraints.audio = false;
-    getMedia(mediaConstraints);
+    localVideo.muted = true;
     console.log('Audio Off');
 };
 audioButtonOn.onclick = () => {
-    mediaConstraints.audio = true;
-    getMedia(mediaConstraints);
+    localVideo.muted = false;
     console.log('Audio On');
 };
 
@@ -117,7 +125,9 @@ function stop() {
 // initialize media stream
 function getMedia(constraints) {
     if (localStream) {
-        localStream.getTracks().forEach(track => {track.stop();});
+        localStream.getTracks().forEach(track => {
+            track.stop();
+        });
     }
     navigator.mediaDevices.getUserMedia(constraints)
         .then(getLocalMediaStream).catch(handleGetUserMediaError);
@@ -153,13 +163,40 @@ function getLocalMediaStream(mediaStream) {
 function createPeerConnection() {
     myPeerConnection = new RTCPeerConnection(peerConnectionConfig);
 
-    // myPeerConnection.onicecandidate = handleICECandidateEvent;
+    myPeerConnection.onicecandidate = handleICECandidateEvent;
     // myPeerConnection.ontrack = handleTrackEvent;
-    // myPeerConnection.onnegotiationneeded = handleNegotiationNeededEvent;
+    myPeerConnection.onnegotiationneeded = handleNegotiationNeededEvent;
     // myPeerConnection.onremovetrack = handleRemoveTrackEvent;
     // myPeerConnection.oniceconnectionstatechange = handleICEConnectionStateChangeEvent;
     // myPeerConnection.onicegatheringstatechange = handleICEGatheringStateChangeEvent;
     // myPeerConnection.onsignalingstatechange = handleSignalingStateChangeEvent;
 }
 
+function handleICECandidateEvent(event) {
+    if (event.candidate) {
+        sendToServer({
+            from: localUser,
+            type: 'signal',
+            data: event.candidate
+        });
+    }
+}
 
+function handleNegotiationNeededEvent() {
+    myPeerConnection.createOffer().then(function(offer) {
+        return myPeerConnection.setLocalDescription(offer);
+    })
+        .then(function() {
+            sendToServer({
+                from: localUser,
+                type: 'signal',
+                data: {
+                    'sdp': myPeerConnection.localDescription
+                }
+            });
+        })
+        .catch(function(reason) {
+            // an error occurred, so handle the failure to connect
+            console.log('failure to connect error: ', reason);
+        });
+}

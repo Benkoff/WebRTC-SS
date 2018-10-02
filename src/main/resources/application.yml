@@ -5,5 +5,5 @@ spring:
 
 logging:
   level:
-    org.springframework.web: info
+    org.springframework: info
     io.github.benkoff.webrtcss: debug
