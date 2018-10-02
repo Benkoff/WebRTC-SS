@@ -8,10 +8,10 @@
 4. Chat Room clients' SDP Offers and ICE Candidates exchanging;
 
 ### TODO
-1. Streaming audio & video with getUserMedia(), constraints -- Client
-2. SDP generation. Offer & Answer -- Client & Server
-3. ICE candidates exchange -- Client & Server
-4. Combine peer connection and signaling -- Client & Server
+1. Test streaming audio & video with getUserMedia(), constraints -- Client
+2. Room Creation, joining -- Client & Server
+3. Messaging with WebSocket -- Client & Server
+4. Peer connection, signaling, ICE, SDP Offers -- Client & Server
 
 **Documentation and Tutorials:**
 * https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Signaling_and_video_calling
@@ -32,5 +32,5 @@
 
 **WebSockets:**
 * https://docs.spring.io/spring/docs/current/spring-framework-reference/web.html#websocket
-* https://www.baeldung.com/java-websockets
+* https://keyholesoftware.com/2017/04/10/websockets-with-spring-boot/
 * https://www.baeldung.com/websockets-spring
