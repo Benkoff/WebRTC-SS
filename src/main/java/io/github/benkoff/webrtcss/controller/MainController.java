@@ -72,7 +72,7 @@ public class MainController {
             Room room = roomService.findRoomByStringId(sid).orElse(null);
             if(room != null) {
                 logger.debug("User {} joins Room #{}", uuid, sid);
-                // send to the room
+                // open the chat room
                 modelAndView = new ModelAndView("chat_room", "id", sid);
                 modelAndView.addObject("uuid", uuid);
             }
@@ -86,7 +86,8 @@ public class MainController {
                                         @PathVariable("uuid") String uuid) {
         logger.debug("User {} exits Room #{}", uuid, sid);
 
-        return displayMainPage(parser.parseId(sid).orElse(null), uuid);
+//        return displayMainPage(parser.parseId(sid).orElse(null), uuid);
+        return new ModelAndView("redirect:/");
     }
 
     @GetMapping("/room/random")

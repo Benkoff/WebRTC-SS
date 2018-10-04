@@ -27,28 +27,31 @@ public class SignalHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // session id to room mapping
-    private Map<String, Room> roomsBySessionId = new HashMap<>();
+    private Map<String, Room> roomBySessionId = new HashMap<>();
 
-    private static final String TEXT_TYPE = "text";
-    private static final String SIGNAL_TYPE = "signal";
-    private static final String JOIN_TYPE = "join";
+    // message types, used in signalling:
+    // text message
+    private static final String MSG_TYPE_TEXT = "text";
+    // SDP Offer message
+    private static final String MSG_TYPE_OFFER = "offer";
+    // SDP Answer message
+    private static final String MSG_TYPE_ANSWER = "answer";
+    // New ICE Candidate message
+    private static final String MSG_TYPE_ICE = "ice";
+    // join room data message
+    private static final String MSG_TYPE_JOIN = "join";
+    // leave room data message
+    private static final String MSG_TYPE_LEAVE = "leave";
 
     @Override
     public void afterConnectionClosed(final WebSocketSession session, final CloseStatus status) throws Exception {
         logger.debug("[ws] Session has been closed with status {}", status);
-        Room room = roomsBySessionId.get(session.getId());
-        // remove the client of the closed session from the Room's client list
-        Optional<String> client = roomService.getClients(room).entrySet().stream()
-                .filter(entry -> Objects.equals(entry.getValue().getId(), session.getId()))
-                .map(Map.Entry::getKey)
-                .findAny();
-        client.ifPresent(c -> roomService.removeClientByName(room, c));
     }
 
     @Override
     public void afterConnectionEstablished(final WebSocketSession session) throws Exception {
         // webSocket has been opened, send first message to client
-        sendMessage(session, new WebSocketMessage("Server", TEXT_TYPE, "Connection has been established"));
+        sendMessage(session, new WebSocketMessage("Server", MSG_TYPE_TEXT, "Connection has been established"));
     }
 
     @Override
@@ -57,31 +60,60 @@ public class SignalHandler extends TextWebSocketHandler {
         try {
             WebSocketMessage message = objectMapper.readValue(textMessage.getPayload(), WebSocketMessage.class);
             logger.debug("[ws] Message of {} type from {} received", message.getType(), message.getFrom());
-
+            String userName = message.getFrom(); // origin of the message
+            String data = message.getData().toString(); // payload
+            Room room;
             switch (message.getType()) {
                 // text message from client has been received
-                case TEXT_TYPE:
+                case MSG_TYPE_TEXT:
                     logger.debug("[ws] Text message: {}", message.getData().toString());
+                    // message.data is the text sent by client
+                    // TODO process text message if needed
                     break;
-                // process received signal from client
-                case SIGNAL_TYPE:
-                    logger.debug("[ws] Signal message: {}", message.getData().toString().substring(0, 20));
-                    break;
-                // identify user and their opponent
-                case JOIN_TYPE:
-                    logger.debug("[ws] Join room: {}", message.getData().toString());
-                    String userName = message.getFrom();
-                    String id = message.getData().toString();
-                    Room room = roomService.findRoomByStringId(id)
-                            .orElseThrow(() -> new IOException("Invalid room number received!"));
-                    roomService.addClient(room, userName, session);
-                    roomsBySessionId.put(session.getId(), room);
 
+                // process signal received from client
+                case MSG_TYPE_OFFER:
+                case MSG_TYPE_ANSWER:
+                case MSG_TYPE_ICE:
+                    logger.debug("[ws] Signal: {}", message.getData().toString().substring(0, 64));
+                    Optional.ofNullable(roomBySessionId.get(session.getId())).ifPresent(rm -> {
+                        roomService.getClients(rm).forEach((name, ws) -> {
+                            if (!name.equals(userName)) {
+                                // data contains signal message
+                                sendMessage(ws, new WebSocketMessage(userName, MSG_TYPE_OFFER, data));
+                            }
+                        });
+                    });
                     break;
-                // something should be wrong with the message received
+
+                // identify user and their opponent
+                case MSG_TYPE_JOIN:
+                    // message.data contains connected room id
+                    logger.debug("[ws] Join room: {}", message.getData().toString());
+                    room = roomService.findRoomByStringId(data)
+                            .orElseThrow(() -> new IOException("Invalid room number received!"));
+                    // add client to the Room clients list
+                    roomService.addClient(room, userName, session);
+                    roomBySessionId.put(session.getId(), room);
+                    break;
+
+                case MSG_TYPE_LEAVE:
+                    // message data contains connected room id
+                    logger.debug("[ws] Leave room: {}", message.getData().toString());
+                    // room id taken by session id
+                    room = roomBySessionId.get(session.getId());
+                    // remove the client which leaves from the Room clients list
+                    Optional<String> client = roomService.getClients(room).entrySet().stream()
+                            .filter(entry -> Objects.equals(entry.getValue().getId(), session.getId()))
+                            .map(Map.Entry::getKey)
+                            .findAny();
+                    client.ifPresent(c -> roomService.removeClientByName(room, c));
+                    break;
+
+                // something should be wrong with the received message, since it's type is unrecognizable
                 default:
-                    logger.debug("[ws] Type of received message undefined!");
-                    // TODO handle this
+                    logger.debug("[ws] Type of the received message " + message.getType() + " is undefined!");
+                    // TODO handle this if needed
             }
 
         } catch (IOException e) {
