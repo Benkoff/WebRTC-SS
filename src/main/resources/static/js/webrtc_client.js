@@ -1,7 +1,7 @@
 'use strict';
 
 // create and run Web Socket connection
-const socket = new WebSocket("ws://" + window.location.host + "/signal");
+const socket = new WebSocket("wss://" + window.location.host + "/signal");
 
 // UI elements
 const videoButtonOff = document.querySelector('#video_off');

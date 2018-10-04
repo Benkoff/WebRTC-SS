@@ -7,3 +7,9 @@ logging:
   level:
     org.springframework: info
     io.github.benkoff.webrtcss: debug
+
+server.port: "8443"
+server.ssl.key-store-type: PKCS12
+server.ssl.key-store: classpath:keystore.p12
+server.ssl.key-store-password: "!Qwert"
+server.ssl.key-alias: tomcat
