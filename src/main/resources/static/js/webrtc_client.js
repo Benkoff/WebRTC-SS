@@ -1,5 +1,4 @@
 'use strict';
-
 // create and run Web Socket connection
 const socket = new WebSocket("ws://" + window.location.host + "/signal");
 
@@ -9,9 +8,9 @@ const videoButtonOn = document.querySelector('#video_on');
 const audioButtonOff = document.querySelector('#audio_off');
 const audioButtonOn = document.querySelector('#audio_on');
 const exitButton = document.querySelector('#exit');
-const localVideo = document.querySelector('#local_video');
-const remoteVideo = document.querySelector('#remote_video');
 const localRoom = document.querySelector('input#id').value;
+const localVideo = document.getElementById('local_video');
+const remoteVideo = document.getElementById('remote_video');
 const localUserName = localStorage.getItem("uuid");
 
 // WebRTC STUN servers
@@ -33,19 +32,15 @@ let localStream;
 let localVideoTracks;
 let myPeerConnection;
 
-// page load runner
+// on page load runner
 $(function(){
     start();
 });
 
-// create peer connection, init local stream
 function start() {
-    createPeerConnection();
-    getMedia(mediaConstraints);
-
     // add an event listener for a message being received
     socket.onmessage = function(msg) {
-        const message = JSON.parse(msg.data);
+        let message = JSON.parse(msg.data);
         switch (message.type) {
             case "text":
                 log('Text message from ' + message.from + ' received: ' + message.data);
@@ -66,8 +61,13 @@ function start() {
                 handleNewICECandidateMessage(message);
                 break;
 
+            case "join":
+                log('Client is starting to ' + (message.data === "true)" ? 'negotiate' : 'wait for a peer'));
+                handlePeerConnection(message);
+                break;
+
             default:
-                logError('Wrong type message received from server');
+                handleErrorMessage('Wrong type message received from server');
         }
     };
 
@@ -89,7 +89,7 @@ function start() {
 
     // an event listener to handle socket errors
     socket.onerror = function(message) {
-        logError("Error: " + message);
+        handleErrorMessage("Error: " + message);
     };
 }
 
@@ -130,7 +130,7 @@ function stop() {
         myPeerConnection.close();
         myPeerConnection = null;
 
-        log('Close the socket')
+        log('Close the socket');
         if (socket != null) {
             socket.close();
         }
@@ -172,7 +172,7 @@ function log(message) {
     console.log(message);
 }
 
-function logError(message) {
+function handleErrorMessage(message) {
     console.error(message);
 }
 
@@ -193,6 +193,28 @@ function getMedia(constraints) {
         .then(getLocalMediaStream).catch(handleGetUserMediaError);
 }
 
+// create peer connection, get media, start negotiating when second participant appears
+function handlePeerConnection(message) {
+    createPeerConnection();
+    getMedia(mediaConstraints);
+    if (message.data === "true") {
+        myPeerConnection.onnegotiationneeded = handleNegotiationNeededEvent;
+    }
+}
+
+function createPeerConnection() {
+    myPeerConnection = new RTCPeerConnection(peerConnectionConfig);
+
+    // event handlers for the ICE negotiation process
+    myPeerConnection.onicecandidate = handleICECandidateEvent;
+    myPeerConnection.ontrack = handleTrackEvent;
+
+    // the following events are optional and could be realized later if needed
+    // myPeerConnection.onremovetrack = handleRemoveTrackEvent;
+    // myPeerConnection.oniceconnectionstatechange = handleICEConnectionStateChangeEvent;
+    // myPeerConnection.onicegatheringstatechange = handleICEGatheringStateChangeEvent;
+    // myPeerConnection.onsignalingstatechange = handleSignalingStateChangeEvent;
+}
 // add MediaStream to local video element and to the Peer
 function getLocalMediaStream(mediaStream) {
     localStream = mediaStream;
@@ -205,8 +227,7 @@ function handleGetUserMediaError(error) {
     log('navigator.getUserMedia error: ', error);
     switch(error.name) {
         case "NotFoundError":
-            alert("Unable to open your call because no camera and/or microphone" +
-                "were found.");
+            alert("Unable to open your call because no camera and/or microphone were found.");
             break;
         case "SecurityError":
         case "PermissionDeniedError":
@@ -220,26 +241,13 @@ function handleGetUserMediaError(error) {
     stop();
 }
 
-function createPeerConnection() {
-    myPeerConnection = new RTCPeerConnection(peerConnectionConfig);
-
-    // event handlers for the ICE negotiation process
-    myPeerConnection.onicecandidate = handleICECandidateEvent;
-    myPeerConnection.ontrack = handleTrackEvent;
-    myPeerConnection.onnegotiationneeded = handleNegotiationNeededEvent;
-    // myPeerConnection.onremovetrack = handleRemoveTrackEvent;
-    // myPeerConnection.oniceconnectionstatechange = handleICEConnectionStateChangeEvent;
-    // myPeerConnection.onicegatheringstatechange = handleICEGatheringStateChangeEvent;
-    // myPeerConnection.onsignalingstatechange = handleSignalingStateChangeEvent;
-}
-
 // send ICE candidate to the peer through the server
 function handleICECandidateEvent(event) {
     if (event.candidate) {
         sendToServer({
             from: localUserName,
             type: 'ice',
-            data: event.candidate
+            candidate: event.candidate
         });
         log('ICE Candidate Event: ICE candidate sent');
     }
@@ -262,77 +270,79 @@ function handleNegotiationNeededEvent() {
             sendToServer({
                 from: localUserName,
                 type: 'offer',
-                data: myPeerConnection.localDescription
+                sdp: myPeerConnection.localDescription
             });
             log('Negotiation Needed Event: SDP offer sent');
         })
         .catch(function(reason) {
             // an error occurred, so handle the failure to connect
-            logError('failure to connect error: ', reason);
+            handleErrorMessage('failure to connect error: ', reason);
         });
 }
 
 function handleOfferMessage(message) {
     log('Accepting Offer Message');
-    createPeerConnection();
-
-    log(message.data);
-    myPeerConnection.setRemoteDescription(
-        new RTCSessionDescription(message.data))
-        .then(function () {
+    log(message);
+    let desc = new RTCSessionDescription(message.sdp);
+    //TODO test this
+    if (desc != null && message.sdp != null) {
+        log('RTC Signalling state: ' + myPeerConnection.signalingState);
+        myPeerConnection.setRemoteDescription(desc).then(function () {
             log("Set up local media stream");
             return navigator.mediaDevices.getUserMedia(mediaConstraints);
         })
-        .then(function(stream) {
-            log("-- Local video stream obtained");
-            localStream = stream;
-            localVideo.src = window.URL.createObjectURL(localStream);
-            localVideo.srcObject = localStream;
+            .then(function (stream) {
+                log("-- Local video stream obtained");
+                localStream = stream;
+                try {
+                    localVideo.srcObject = localStream;
+                } catch (error) {
+                    localVideo.src = window.URL.createObjectURL(stream);
+                }
 
-            log("-- Adding stream to the RTCPeerConnection");
-            myPeerConnection.addStream(localStream);
+                log("-- Adding stream to the RTCPeerConnection");
+                localStream.getTracks().forEach(track => myPeerConnection.addTrack(track, localStream));
+            })
+            .then(function () {
+                log("-- Creating answer");
+                // Now that we've successfully set the remote description, we need to
+                // start our stream up locally then create an SDP answer. This SDP
+                // data describes the local end of our call, including the codec
+                // information, options agreed upon, and so forth.
+                return myPeerConnection.createAnswer();
+            })
+            .then(function (answer) {
+                log("-- Setting local description after creating answer");
+                // We now have our answer, so establish that as the local description.
+                // This actually configures our end of the call to match the settings
+                // specified in the SDP.
+                return myPeerConnection.setLocalDescription(answer);
+            })
+            .then(function () {
+                log("Sending answer packet back to other peer");
+                sendToServer({
+                    from: localUserName,
+                    type: 'answer',
+                    sdp: myPeerConnection.localDescription
+                });
 
-        })
-        .then(function() {
-            log("-- Creating answer");
-            // Now that we've successfully set the remote description, we need to
-            // start our stream up locally then create an SDP answer. This SDP
-            // data describes the local end of our call, including the codec
-            // information, options agreed upon, and so forth.
-            return myPeerConnection.createAnswer();
-        })
-        .then(function(answer) {
-            log("-- Setting local description after creating answer");
-            // We now have our answer, so establish that as the local description.
-            // This actually configures our end of the call to match the settings
-            // specified in the SDP.
-            return myPeerConnection.setLocalDescription(answer);
-        })
-        .then(function() {
-            log("Sending answer packet back to other peer");
-            sendToServer({
-                from: localUserName,
-                type: 'offer',
-                data: myPeerConnection.localDescription
-            });
-
-        })
-        .catch(handleGetUserMediaError);
+            })
+            // .catch(handleGetUserMediaError);
+            .catch(handleErrorMessage)
+    }
 }
 
 function handleAnswerMessage(message) {
-    log("Call recipient has accepted our call");
+    log("The peer has accepted request");
 
     // Configure the remote description, which is the SDP payload
     // in our "video-answer" message.
-    myPeerConnection.setRemoteDescription(new RTCSessionDescription(message.data)).catch(logError);
+    // myPeerConnection.setRemoteDescription(new RTCSessionDescription(message.sdp)).catch(handleErrorMessage);
+    myPeerConnection.setRemoteDescription(message.sdp).catch(handleErrorMessage);
 }
 
 function handleNewICECandidateMessage(message) {
+    let candidate = new RTCIceCandidate(message.candidate);
     log("Adding received ICE candidate: " + JSON.stringify(candidate));
-
-    let candidate = new RTCIceCandidate(message.data);
-    myPeerConnection.addIceCandidate(candidate)
-        .catch(logError);
+    myPeerConnection.addIceCandidate(candidate).catch(handleErrorMessage);
 }
-
