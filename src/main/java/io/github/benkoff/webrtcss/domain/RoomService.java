@@ -35,6 +35,7 @@ public class RoomService {
     }
 
     public Optional<Room> findRoomByStringId(final String sid) {
+        // simple get() because of parser errors handling
         return rooms.stream().filter(r -> r.getId().equals(parser.parseId(sid).get())).findAny();
     }
 
@@ -43,7 +44,9 @@ public class RoomService {
     }
 
     public Map<String, WebSocketSession> getClients(final Room room) {
-        return Collections.unmodifiableMap(room.getClients());
+        return Optional.ofNullable(room)
+                .map(r -> Collections.unmodifiableMap(r.getClients()))
+                .orElse(Collections.emptyMap());
     }
 
     public WebSocketSession addClient(final Room room, final String name, final WebSocketSession session) {

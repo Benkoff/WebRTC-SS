@@ -70,9 +70,9 @@ public class MainController {
 
         if (parser.parseId(sid).isPresent()) {
             Room room = roomService.findRoomByStringId(sid).orElse(null);
-            if(room != null) {
-                logger.debug("User {} joins Room #{}", uuid, sid);
-                // send to the room
+            if(room != null && uuid != null && !uuid.isEmpty()) {
+                logger.debug("User {} is going to join Room #{}", uuid, sid);
+                // open the chat room
                 modelAndView = new ModelAndView("chat_room", "id", sid);
                 modelAndView.addObject("uuid", uuid);
             }
@@ -84,9 +84,12 @@ public class MainController {
     @GetMapping("/room/{sid}/user/{uuid}/exit")
     public ModelAndView processRoomExit(@PathVariable("sid") String sid,
                                         @PathVariable("uuid") String uuid) {
-        logger.debug("User {} exits Room #{}", uuid, sid);
-
-        return displayMainPage(parser.parseId(sid).orElse(null), uuid);
+        if(sid != null && uuid != null) {
+            logger.debug("User {} has left Room #{}", uuid, sid);
+            // TODO implement any logic you need
+        }
+//        return displayMainPage(parser.parseId(sid).orElse(null), uuid);
+        return new ModelAndView("redirect:/");
     }
 
     @GetMapping("/room/random")
