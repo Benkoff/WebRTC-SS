@@ -1,11 +1,11 @@
 # WebRTC-SS
-## WebRTC Signaling Server
+## WebRTC Signaling Server & Simple Video Chat
 
-## This is a simple signaling server to provide the following functionality:
-1. Client's WebSocket connection establishing;
-2. New chat rooms creation;
-3. Created chat room links publishing;
-4. Chat Room clients' SDP Offers and ICE Candidates exchanging;
+## Simple Spring Boot signaling server to provide basic functionality:
+1. Create chat rooms prividing their links publishing;
+2. Establish client-service WebSocket connections; 
+3. Implement WebRTS SDP Offers and ICE Candidates negotiation;
+4. Peer-to-peer video chatting;
 
 ### TODO
 1. Test streaming audio & video with getUserMedia(), constraints -- Client
