@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -23,6 +24,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
+@WebAppConfiguration
 public class SignalHandlerTest {
     @Autowired private RoomService service;
     @Autowired private SignalHandler handler;
@@ -42,16 +44,21 @@ public class SignalHandlerTest {
 
     @Test
     public void shouldRemoveClient_whenConnectionClosed() throws Exception {
-        WebSocketMessage message = new WebSocketMessage(name, "join", room.getId().toString());
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-        String json = ow.writeValueAsString(message);
-        TextMessage textMessage = new TextMessage(json);
-
-        handler.handleTextMessage(session, textMessage);
-
-//        assertThat(service.getClients(room))
-//                .containsValue(session);
-
+        WebSocketMessage message = new WebSocketMessage(
+                name,
+                "join",
+                room.getId().toString(),
+                null,
+                null);
+        handler.handleTextMessage(session, new TextMessage(ow.writeValueAsString(message)));
+        message = new WebSocketMessage(
+                name,
+                "leave",
+                room.getId().toString(),
+                null,
+                null);
+        handler.handleTextMessage(session, new TextMessage(ow.writeValueAsString(message)));
         handler.afterConnectionClosed(session, CloseStatus.NORMAL);
 
         assertThat(service.getClients(room))
