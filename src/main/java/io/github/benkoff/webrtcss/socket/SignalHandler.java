@@ -27,7 +27,7 @@ public class SignalHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // session id to room mapping
-    private Map<String, Room> roomBySessionId = new HashMap<>();
+    private Map<String, Room> sessionIdToRoomMap = new HashMap<>();
 
     // message types, used in signalling:
     // text message
@@ -46,12 +46,19 @@ public class SignalHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(final WebSocketSession session, final CloseStatus status) throws Exception {
         logger.debug("[ws] Session has been closed with status {}", status);
+
     }
 
     @Override
     public void afterConnectionEstablished(final WebSocketSession session) throws Exception {
-        // webSocket has been opened, send first message to client
-        sendMessage(session, new WebSocketMessage("Server", MSG_TYPE_TEXT, "Connection has been established"));
+        // webSocket has been opened, send a message to the client
+        // when data field contains 'true' value, the client starts negotiating
+        // to establish peer-to-peer connection, otherwise they wait for a counterpart
+        sendMessage(session, new WebSocketMessage("Server",
+                MSG_TYPE_JOIN,
+                Boolean.valueOf(!sessionIdToRoomMap.isEmpty()).toString(),
+                null,
+                null));
     }
 
     @Override
@@ -61,7 +68,8 @@ public class SignalHandler extends TextWebSocketHandler {
             WebSocketMessage message = objectMapper.readValue(textMessage.getPayload(), WebSocketMessage.class);
             logger.debug("[ws] Message of {} type from {} received", message.getType(), message.getFrom());
             String userName = message.getFrom(); // origin of the message
-            String data = message.getData().toString(); // payload
+            String data = message.getData(); // payload
+
             Room room;
             switch (message.getType()) {
                 // text message from client has been received
@@ -75,39 +83,55 @@ public class SignalHandler extends TextWebSocketHandler {
                 case MSG_TYPE_OFFER:
                 case MSG_TYPE_ANSWER:
                 case MSG_TYPE_ICE:
-                    logger.debug("[ws] Signal: {}", message.getData().toString().substring(0, 64));
-                    Optional.ofNullable(roomBySessionId.get(session.getId())).ifPresent(rm -> {
-                        roomService.getClients(rm).forEach((name, ws) -> {
-                            if (!name.equals(userName)) {
-                                // data contains signal message
-                                sendMessage(ws, new WebSocketMessage(userName, MSG_TYPE_OFFER, data));
+                    Object candidate = message.getCandidate();
+                    Object sdp = message.getSdp();
+                    logger.debug("[ws] Signal: {}",
+                            candidate != null
+                                    ? candidate.toString().substring(0, 64)
+                                    : sdp.toString().substring(0, 64));
+
+                    Room rm = sessionIdToRoomMap.get(session.getId());
+                    if (rm != null) {
+                        Map<String, WebSocketSession> clients = roomService.getClients(rm);
+                        for(Map.Entry<String, WebSocketSession> client : clients.entrySet())  {
+                            // send messages to all clients except current user
+                            if (!client.getKey().equals(userName)) {
+                                // select the same type to resend signal
+                                sendMessage(client.getValue(),
+                                        new WebSocketMessage(
+                                                userName,
+                                                message.getType(),
+                                                data,
+                                                candidate,
+                                                sdp));
                             }
-                        });
-                    });
+                        }
+                    }
                     break;
 
                 // identify user and their opponent
                 case MSG_TYPE_JOIN:
                     // message.data contains connected room id
-                    logger.debug("[ws] Join room: {}", message.getData().toString());
-                    room = roomService.findRoomByStringId(data)
+                    logger.debug("[ws] {} has joined Room: #{}", userName, message.getData().toString());
+                    room = roomService.findRoomByStringId(data.toString())
                             .orElseThrow(() -> new IOException("Invalid room number received!"));
                     // add client to the Room clients list
                     roomService.addClient(room, userName, session);
-                    roomBySessionId.put(session.getId(), room);
+                    sessionIdToRoomMap.put(session.getId(), room);
                     break;
 
                 case MSG_TYPE_LEAVE:
                     // message data contains connected room id
-                    logger.debug("[ws] Leave room: {}", message.getData().toString());
+                    logger.debug("[ws] {} is going to leave Room: #{}", userName, message.getData().toString());
                     // room id taken by session id
-                    room = roomBySessionId.get(session.getId());
+                    room = sessionIdToRoomMap.get(session.getId());
                     // remove the client which leaves from the Room clients list
                     Optional<String> client = roomService.getClients(room).entrySet().stream()
                             .filter(entry -> Objects.equals(entry.getValue().getId(), session.getId()))
                             .map(Map.Entry::getKey)
                             .findAny();
                     client.ifPresent(c -> roomService.removeClientByName(room, c));
+                    sessionIdToRoomMap.remove(session.getId());
                     break;
 
                 // something should be wrong with the received message, since it's type is unrecognizable

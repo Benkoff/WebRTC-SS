@@ -1,4 +1,5 @@
 'use strict';
+
 // create and run Web Socket connection
 const socket = new WebSocket("wss://" + window.location.host + "/signal");
 
@@ -8,9 +9,9 @@ const videoButtonOn = document.querySelector('#video_on');
 const audioButtonOff = document.querySelector('#audio_off');
 const audioButtonOn = document.querySelector('#audio_on');
 const exitButton = document.querySelector('#exit');
+const localVideo = document.querySelector('#local_video');
+const remoteVideo = document.querySelector('#remote_video');
 const localRoom = document.querySelector('input#id').value;
-const localVideo = document.getElementById('local_video');
-const remoteVideo = document.getElementById('remote_video');
 const localUserName = localStorage.getItem("uuid");
 
 // WebRTC STUN servers
@@ -32,12 +33,16 @@ let localStream;
 let localVideoTracks;
 let myPeerConnection;
 
-// on page load runner
+// page load runner
 $(function(){
     start();
 });
 
+// create peer connection, init local stream
 function start() {
+    createPeerConnection();
+    getMedia(mediaConstraints);
+
     // add an event listener for a message being received
     socket.onmessage = function(msg) {
         let message = JSON.parse(msg.data);
@@ -61,16 +66,9 @@ function start() {
                 handleNewICECandidateMessage(message);
                 break;
 
-            case "join":
-                log('Client is starting to ' + (message.data === "true)" ? 'negotiate' : 'wait for a peer'));
-                handlePeerConnection(message);
-                break;
-
             default:
-                handleErrorMessage('Wrong type message received from server');
+                logError('Wrong type message received from server');
         }
-
-
     };
 
     // add an event listener to get to know when a connection is open
@@ -91,7 +89,7 @@ function start() {
 
     // an event listener to handle socket errors
     socket.onerror = function(message) {
-        handleErrorMessage("Error: " + message);
+        logError("Error: " + message);
     };
 }
 
@@ -174,7 +172,7 @@ function log(message) {
     console.log(message);
 }
 
-function handleErrorMessage(message) {
+function logError(message) {
     console.error(message);
 }
 
@@ -195,28 +193,6 @@ function getMedia(constraints) {
         .then(getLocalMediaStream).catch(handleGetUserMediaError);
 }
 
-// create peer connection, get media, start negotiating when second participant appears
-function handlePeerConnection(message) {
-    createPeerConnection();
-    getMedia(mediaConstraints);
-    if (message.data === "true") {
-        myPeerConnection.onnegotiationneeded = handleNegotiationNeededEvent;
-    }
-}
-
-function createPeerConnection() {
-    myPeerConnection = new RTCPeerConnection(peerConnectionConfig);
-
-    // event handlers for the ICE negotiation process
-    myPeerConnection.onicecandidate = handleICECandidateEvent;
-    myPeerConnection.ontrack = handleTrackEvent;
-
-    // the following events are optional and could be realized later if needed
-    // myPeerConnection.onremovetrack = handleRemoveTrackEvent;
-    // myPeerConnection.oniceconnectionstatechange = handleICEConnectionStateChangeEvent;
-    // myPeerConnection.onicegatheringstatechange = handleICEGatheringStateChangeEvent;
-    // myPeerConnection.onsignalingstatechange = handleSignalingStateChangeEvent;
-}
 // add MediaStream to local video element and to the Peer
 function getLocalMediaStream(mediaStream) {
     localStream = mediaStream;
@@ -241,6 +217,19 @@ function handleGetUserMediaError(error) {
     }
 
     stop();
+}
+
+function createPeerConnection() {
+    myPeerConnection = new RTCPeerConnection(peerConnectionConfig);
+
+    // event handlers for the ICE negotiation process
+    myPeerConnection.onicecandidate = handleICECandidateEvent;
+    myPeerConnection.ontrack = handleTrackEvent;
+    myPeerConnection.onnegotiationneeded = handleNegotiationNeededEvent;
+    // myPeerConnection.onremovetrack = handleRemoveTrackEvent;
+    // myPeerConnection.oniceconnectionstatechange = handleICEConnectionStateChangeEvent;
+    // myPeerConnection.onicegatheringstatechange = handleICEGatheringStateChangeEvent;
+    // myPeerConnection.onsignalingstatechange = handleSignalingStateChangeEvent;
 }
 
 // send ICE candidate to the peer through the server
@@ -279,13 +268,13 @@ function handleNegotiationNeededEvent() {
         })
         .catch(function(reason) {
             // an error occurred, so handle the failure to connect
-            handleErrorMessage('failure to connect error: ', reason);
+            logError('failure to connect error: ', reason);
         });
 }
 
 function handleOfferMessage(message) {
     log('Accepting Offer Message');
-    // createPeerConnection();
+    createPeerConnection();
 
     log(message);
 
@@ -315,7 +304,9 @@ function handleOfferMessage(message) {
                 // localVideo.srcObject = localStream;
 
                 log("-- Adding stream to the RTCPeerConnection");
-                localStream.getTracks().forEach(track => myPeerConnection.addTrack(track, localStream));
+                localStream.getTracks().forEach(track =>
+                    myPeerConnection.addTrack(track, localStream)
+                );
             })
             .then(function () {
                 log("-- Creating answer");
@@ -342,22 +333,24 @@ function handleOfferMessage(message) {
 
             })
             // .catch(handleGetUserMediaError);
-            .catch(handleErrorMessage)
+            .catch(logError)
     }
 }
 
 function handleAnswerMessage(message) {
-    log("The peer has accepted request");
+    log("Call recipient has accepted our call");
 
     // Configure the remote description, which is the SDP payload
     // in our "video-answer" message.
-    // myPeerConnection.setRemoteDescription(new RTCSessionDescription(message.sdp)).catch(handleErrorMessage);
-    myPeerConnection.setRemoteDescription(message.sdp).catch(handleErrorMessage);
+    // myPeerConnection.setRemoteDescription(new RTCSessionDescription(message.sdp)).catch(logError);
+    myPeerConnection.setRemoteDescription(message.sdp).catch(logError);
 }
 
 function handleNewICECandidateMessage(message) {
-    let candidate = new RTCIceCandidate(message.candidate);
     log("Adding received ICE candidate: " + JSON.stringify(candidate));
-    myPeerConnection.addIceCandidate(candidate).catch(handleErrorMessage);
+
+    let candidate = new RTCIceCandidate(message.candidate);
+    myPeerConnection.addIceCandidate(candidate)
+        .catch(logError);
 }
 
