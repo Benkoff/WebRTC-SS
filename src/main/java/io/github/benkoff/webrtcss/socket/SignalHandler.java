@@ -46,7 +46,7 @@ public class SignalHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(final WebSocketSession session, final CloseStatus status) throws Exception {
         logger.debug("[ws] Session has been closed with status {}", status);
-
+        sessionIdToRoomMap.remove(session.getId());
     }
 
     @Override
@@ -131,7 +131,6 @@ public class SignalHandler extends TextWebSocketHandler {
                             .map(Map.Entry::getKey)
                             .findAny();
                     client.ifPresent(c -> roomService.removeClientByName(room, c));
-                    sessionIdToRoomMap.remove(session.getId());
                     break;
 
                 // something should be wrong with the received message, since it's type is unrecognizable
