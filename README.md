@@ -5,7 +5,7 @@
 1. Create chat rooms prividing their links publishing;
 2. Establish client-service WebSocket connections; 
 3. Implement WebRTS SDP Offers and ICE Candidates negotiation;
-4. Peer-to-peer video chatting;
+4. Test peer-to-peer video chatting;
 
 ### TODO
 1. Test streaming audio & video with getUserMedia(), constraints -- Client
