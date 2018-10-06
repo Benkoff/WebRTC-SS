@@ -18,9 +18,9 @@ The back side uses the following frameworks and technologies:
 
 ### Git Repository Structure
 This GitHub repository has 3 branches:
-* main - with latest stable version working on http://localhost:8080
+* main - latest stable version working on http://localhost:8080
 * develop - to maintain product development;
-* test - includes self-signed sertificates to test video chatting on mobile devices (such as Android Chromium, which forbid http connection lo local host), use https://localhost:4883 to reach this version, and let your browser ingnore a warning about the certificate.
+* test - includes self-signed sertificates to test video chatting on mobile devices (such as Android Chromium, which forbid http connection to local host), use https://localhost:4883 to reach this version, and let your browser ingnore a warning about the certificate.
 
 ### Project Structure
 * MainController provides HTTP requests handling, model processing and view presentation;
