@@ -4,7 +4,7 @@
 ## Simple Signaling Server to provide basic WebRTC functionality
 1. Create chat rooms prividing their links web publishing;
 2. Establish client-service WebSocket connections; 
-3. Implement WebRTS SDP Offers and ICE Candidates negotiation;
+3. Implement WebRTC SDP Offers and ICE Candidates negotiation;
 4. Test peer-to-peer video chatting.
 
 ### Project Desription
@@ -23,7 +23,7 @@ This GitHub repository has 3 branches:
 * test - includes self-signed sertificates to test video chatting on mobile devices (such as Android Chromium, which forbid http connection lo local host), use https://localhost:4883 to reach this version, and let your browser ingnore a warning about the certificate.
 
 ### Project Structure
-* MainController provides HTTP requests hadling, model processing and view presentation;
+* MainController provides HTTP requests handling, model processing and view presentation;
 * Domain package includes domain model and service;
 * Web Socket based Web RTC Signalling Server is located under the Socket directory;
 * Config and Util packages contain configuration and utility classes respectively;
