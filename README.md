@@ -2,7 +2,7 @@
 ## WebRTC Signaling Server & Simple Video Chat
 
 ## Simple Signaling Server to provide basic WebRTC functionality
-1. Create chat rooms prividing their links web publishing;
+1. Create chat rooms providing their links web publishing;
 2. Establish client-service WebSocket connections; 
 3. Implement WebRTC SDP Offers and ICE Candidates negotiation;
 4. Test peer-to-peer video chatting.
@@ -35,11 +35,11 @@ Method |      URI (prefixed with http://localhost:8080)            |  Descriptio
  ------ | --------------------------------------------------- | ------- 
  Get | "", "/", "/index", "/home", "/main" | main page application web entry point
  Post | "/room" | process room selection form
- Get | "/room/{sid}/user/{uuid}" | select a room to enter, where sid - room#, uuid - user id
+ Get | "/room/{sid}/user/{uuid}" | select a room to enter; sid - room number, uuid - user id
  Get | "/room/{sid}/user/{uuid}/exit" | a room exit point for the user selected
  Get | "/room/random" | generates random room number
  Get | "/offer" | demonstrates sample SDP offer
- Get | "/stream" | demontrates streamming video resolution selection
+ Get | "/stream" | demonstrates streaming video resolution selection
 
 ### Useful Links and Sources
 **Documentation and Tutorials:**
