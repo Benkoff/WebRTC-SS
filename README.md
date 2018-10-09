@@ -40,6 +40,13 @@ Method |      URI (prefixed with http://localhost:8080)            |  Descriptio
  Get | "/room/random" | generates random room number
  Get | "/offer" | demonstrates sample SDP offer
  Get | "/stream" | demonstrates streaming video resolution selection
+ 
+### Building and Running Docker Image
+1. Build a Docker image running in the Terminal ``./gradlew build docker --info``
+2. Select recently built image, tagged ``benkoff/webrtcss-spring-boot-docker:latest``
+3. Push selected image to Docker hub
+4. Pull and run uploaded image in local Docker with ``docker run -p 8080:8080 -t benkoff/webrtcss-spring-boot-docker
+``
 
 ### Useful Links and Sources
 **Documentation and Tutorials:**

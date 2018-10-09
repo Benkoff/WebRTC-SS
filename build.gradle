@@ -4,9 +4,13 @@ buildscript {
 	}
 	repositories {
 		mavenCentral()
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
 	}
 	dependencies {
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+		classpath "gradle.plugin.com.palantir.gradle.docker:gradle-docker:0.20.1"
 	}
 }
 
@@ -14,15 +18,20 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
+apply plugin: 'com.palantir.docker'
 
 group = 'io.github.benkoff'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = 1.8
 
+bootJar {
+    baseName = 'webrtcss-spring-boot-docker'
+    version =  '0.1.0'
+}
+
 repositories {
 	mavenCentral()
 }
-
 
 dependencies {
     compile('org.springframework.boot:spring-boot-starter-thymeleaf')
@@ -30,4 +39,18 @@ dependencies {
     compile('org.springframework.boot:spring-boot-starter-websocket')
     compile('org.springframework.boot:spring-boot-starter-validation')
     testCompile('org.springframework.boot:spring-boot-starter-test')
+}
+
+task unpack(type: Copy) {
+	dependsOn bootJar
+	from(zipTree("build/libs/${bootJar.archiveName}"))
+	into("build/dependency")
+}
+
+docker {
+	name "benkoff/${bootJar.baseName}"
+	tags 'latest'
+	dockerfile file('Dockerfile')
+	copySpec.from(tasks.unpack.outputs).into("dependency")
+	buildArgs(['DEPENDENCY': "dependency"])
 }
