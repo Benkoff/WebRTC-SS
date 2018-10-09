@@ -31,7 +31,7 @@ This GitHub repository has 3 branches:
 * Resources folder keeps application.yml configuration file, certificates (in test branch), frontside templates and static content (CSS, Java Script files).
 
 ### API
-Method |      URI (prefixed with http://localhost:8080)            |  Description
+Method |      URI           |  Description
  ------ | --------------------------------------------------- | ------- 
  Get | "", "/", "/index", "/home", "/main" | main page application web entry point
  Post | "/room" | process room selection form
