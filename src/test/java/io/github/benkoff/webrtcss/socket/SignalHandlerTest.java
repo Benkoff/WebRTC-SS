@@ -45,19 +45,9 @@ public class SignalHandlerTest {
     @Test
     public void shouldRemoveClient_whenConnectionClosed() throws Exception {
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-        WebSocketMessage message = new WebSocketMessage(
-                name,
-                "join",
-                room.getId().toString(),
-                null,
-                null);
+        WebSocketMessage message = new WebSocketMessage(name,"join", room.getId().toString(), null, null);
         handler.handleTextMessage(session, new TextMessage(ow.writeValueAsString(message)));
-        message = new WebSocketMessage(
-                name,
-                "leave",
-                room.getId().toString(),
-                null,
-                null);
+        message = new WebSocketMessage(name, "leave", room.getId().toString(), null, null);
         handler.handleTextMessage(session, new TextMessage(ow.writeValueAsString(message)));
         handler.afterConnectionClosed(session, CloseStatus.NORMAL);
 

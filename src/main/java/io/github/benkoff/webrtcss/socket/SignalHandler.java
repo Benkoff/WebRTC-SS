@@ -44,21 +44,17 @@ public class SignalHandler extends TextWebSocketHandler {
     private static final String MSG_TYPE_LEAVE = "leave";
 
     @Override
-    public void afterConnectionClosed(final WebSocketSession session, final CloseStatus status) throws Exception {
+    public void afterConnectionClosed(final WebSocketSession session, final CloseStatus status) {
         logger.debug("[ws] Session has been closed with status {}", status);
         sessionIdToRoomMap.remove(session.getId());
     }
 
     @Override
-    public void afterConnectionEstablished(final WebSocketSession session) throws Exception {
+    public void afterConnectionEstablished(final WebSocketSession session) {
         // webSocket has been opened, send a message to the client
         // when data field contains 'true' value, the client starts negotiating
         // to establish peer-to-peer connection, otherwise they wait for a counterpart
-        sendMessage(session, new WebSocketMessage("Server",
-                MSG_TYPE_JOIN,
-                Boolean.valueOf(!sessionIdToRoomMap.isEmpty()).toString(),
-                null,
-                null));
+        sendMessage(session, new WebSocketMessage("Server", MSG_TYPE_JOIN, Boolean.toString(!sessionIdToRoomMap.isEmpty()), null, null));
     }
 
     @Override
@@ -74,9 +70,9 @@ public class SignalHandler extends TextWebSocketHandler {
             switch (message.getType()) {
                 // text message from client has been received
                 case MSG_TYPE_TEXT:
-                    logger.debug("[ws] Text message: {}", message.getData().toString());
+                    logger.debug("[ws] Text message: {}", message.getData());
                     // message.data is the text sent by client
-                    // TODO process text message if needed
+                    // process text message if needed
                     break;
 
                 // process signal received from client
@@ -112,8 +108,8 @@ public class SignalHandler extends TextWebSocketHandler {
                 // identify user and their opponent
                 case MSG_TYPE_JOIN:
                     // message.data contains connected room id
-                    logger.debug("[ws] {} has joined Room: #{}", userName, message.getData().toString());
-                    room = roomService.findRoomByStringId(data.toString())
+                    logger.debug("[ws] {} has joined Room: #{}", userName, message.getData());
+                    room = roomService.findRoomByStringId(data)
                             .orElseThrow(() -> new IOException("Invalid room number received!"));
                     // add client to the Room clients list
                     roomService.addClient(room, userName, session);
@@ -122,7 +118,7 @@ public class SignalHandler extends TextWebSocketHandler {
 
                 case MSG_TYPE_LEAVE:
                     // message data contains connected room id
-                    logger.debug("[ws] {} is going to leave Room: #{}", userName, message.getData().toString());
+                    logger.debug("[ws] {} is going to leave Room: #{}", userName, message.getData());
                     // room id taken by session id
                     room = sessionIdToRoomMap.get(session.getId());
                     // remove the client which leaves from the Room clients list
@@ -135,12 +131,12 @@ public class SignalHandler extends TextWebSocketHandler {
 
                 // something should be wrong with the received message, since it's type is unrecognizable
                 default:
-                    logger.debug("[ws] Type of the received message " + message.getType() + " is undefined!");
-                    // TODO handle this if needed
+                    logger.debug("[ws] Type of the received message {} is undefined!", message.getType());
+                    // handle this if needed
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.debug("An error occured: {}", e.getMessage());
         }
     }
 
@@ -149,7 +145,7 @@ public class SignalHandler extends TextWebSocketHandler {
             String json = objectMapper.writeValueAsString(message);
             session.sendMessage(new TextMessage(json));
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.debug("An error occured: {}", e.getMessage());
         }
     }
 }
